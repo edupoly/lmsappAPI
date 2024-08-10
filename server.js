@@ -1,13 +1,19 @@
 var express = require('express');
 var mongoose = require("mongoose");
-var User = require("./models/user.model");
 var bodyParser = require('body-parser');
 var cors = require('cors');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+
+var User = require("./models/user.model");
+var Admin = require("./models/admin.model");
 
 var app = express();
 app.use(express.static(__dirname + "/public"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+
+const JWT_SECRET = crypto.randomBytes(32).toString('hex');
 
 // Enable CORS for all routes
 app.use(cors());
@@ -19,6 +25,20 @@ app.get("/", (req, res) => {
 mongoose.connect("mongodb+srv://infoedupoly:edupoly83@cluster0.eitlw5l.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('MongoDB connection error:', err));
+
+
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+    const token = req.headers['authorization'];
+    if (!token) return res.sendStatus(401);
+  
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (err) return res.sendStatus(403);
+      req.user = user;
+      next();
+    });
+  };
+
 
 // User Signup route
 app.post('/usersignup', async (req, res) => {
@@ -47,6 +67,39 @@ app.post('/usersignup', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+// Admin and User Login route
+app.post('/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        // Check the Admin collection first
+        let user = await Admin.findOne({ adminusername: username, adminpassword: password });
+        if (user) {
+            const token = jwt.sign({ username, role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
+            console.log(`Admin login: ${username}`); // Log admin login
+            return res.json({ username, token, role: 'admin' });
+        }
+
+        // If not found in Admin, check the User collection
+        user = await User.findOne({ username, password });
+        if (user) {
+            const token = jwt.sign({ username, role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
+            console.log(`User login: ${username}`); // Log user login
+            return res.json({ username, token, role: 'user' });
+        }
+
+        // If no user found
+        console.log(`Failed login attempt: ${username}`); // Log failed login attempt
+        res.status(401).json({ message: 'Invalid credentials' });
+    } catch (err) {
+        console.error("Login error:", err);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
 
 app.listen(9999, () => {
     console.log('server is running on 9999');

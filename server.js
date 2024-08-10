@@ -68,6 +68,35 @@ app.post('/usersignup', async (req, res) => {
     }
 });
 
+
+// Admin Signup route
+app.post('/adminsignup', async (req, res) => {
+    try {
+      // console.log(req.body)
+      const { email, password, username, contact } = req.body;
+      const existingAdmin = await Admin.findOne({ email });
+  
+      if (existingAdmin) {
+        return res.status(400).json({ message: 'Admin already exists' });
+      }
+  
+      const newAdmin = new Admin({
+        adminemail: email,
+        adminpassword: password,
+        adminusername: username,
+        admincontact: contact
+      });
+  
+      await newAdmin.save();
+      console.log('Admin created successfully:', newAdmin); // Log the created user details
+      res.status(201).json({ message: 'Admin created successfully' });
+    } catch (err) {
+      console.error("Error creating admin:", err);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+
 // Admin and User Login route
 app.post('/login', async (req, res) => {
     try {

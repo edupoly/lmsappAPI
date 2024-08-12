@@ -132,16 +132,40 @@ app.post('/login', async (req, res) => {
 });
 
 
-// admin routes
+// Admin routes
+app.post('/createcourse', authenticateToken, async (req, res) => {
+  try {
+      // Assuming the user must be an admin to create a course
+      if (req.headers.role !== 'admin') {
+          return res.status(403).json({ message: 'Access denied. Admins only.' });
+      }
 
-app.post("/createcourse", authenticateToken, (req, res) => {
-  mongoose.connect("mongodb://localhost:27017").then(() => {
-      var newCourse = new courses(req.body);
-      newCourse.save().then(() => {
-          res.redirect("/admin/dashboard");
+      const { coursename, coursenickname, coursetrainer, courseduration, courseprice, courseprereq, coursesamplevideo, coursevideourls, coursetype, courselogourl, coursedescription, courseroughtopics, coursecontenttitle, coursevideos } = req.body;
+
+      const newCourse = new Course({
+          coursename,
+          coursenickname,
+          coursetrainer,
+          courseduration,
+          courseprice,
+          courseprereq,
+          coursesamplevideo,
+          coursetype,
+          courselogourl,
+          coursedescription,
+          courseroughtopics,
+          coursevideos
       });
-  });
+
+      await newCourse.save();
+      console.log('Course created successfully:', newCourse); // Log the created course details
+      res.status(201).json({ message: 'Course created successfully', course: newCourse });
+  } catch (err) {
+      console.error("Error creating course:", err); // Log any errors that occur
+      res.status(500).json({ message: 'Internal server error' });
+  }
 });
+
 
 
 

@@ -17,12 +17,10 @@ const courseSchema = new Schema({
     "courseprice": { type: 'String'},
     "courseprereq": { type: ['String'] },
     "coursesamplevideo": { type: 'String'},
-    "coursevideourls": { type: ['String'] },
     "coursetype": { type: 'String'},
     "courselogourl":{type: 'String'},
     "coursedescription":{type: 'String'},
     "courseroughtopics": { type: ['String'] },
-    "coursecontenttitle": { type: ['String'] },
     "coursevideos": { type: [courseVideoSchema] }
 });
 

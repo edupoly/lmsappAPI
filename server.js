@@ -191,6 +191,19 @@ app.post('/createcohort', upload.single('cohortpic'), async (req, res) => {
 });
 
 
+// Route to get all cohorts
+app.get("/getcohorts", async(req,res)=>{
+   try{
+    const cohorts = await Cohort.find()
+    res.json(cohorts)
+   }
+   catch(err){
+      console.error('Error fetching cohorts', err);
+      res.status(500).json({message: "Internal Server error"})
+   }
+})
+
+
 app.listen(9999, () => {
   console.log('server is running on 9999');
 });

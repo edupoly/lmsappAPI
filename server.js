@@ -134,7 +134,7 @@ app.post('/login', async (req, res) => {
 
 // admin routes
 
-app.post("/admin/createcourse", authenticateToken, (req, res) => {
+app.post("/createcourse", authenticateToken, (req, res) => {
   mongoose.connect("mongodb://localhost:27017").then(() => {
       var newCourse = new courses(req.body);
       newCourse.save().then(() => {

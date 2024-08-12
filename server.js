@@ -7,6 +7,7 @@ const crypto = require('crypto');
 
 var User = require("./models/user.model");
 var Admin = require("./models/admin.model");
+var Course = require("./models/course.model");
 
 var app = express();
 app.use(express.static(__dirname + "/public"));
@@ -38,6 +39,9 @@ const authenticateToken = (req, res, next) => {
       next();
     });
   };
+
+
+
 
 
 // User Signup route
@@ -125,6 +129,18 @@ app.post('/login', async (req, res) => {
         console.error("Login error:", err);
         res.status(500).json({ message: 'Internal server error' });
     }
+});
+
+
+// admin routes
+
+app.post("/admin/createcourse", authenticateToken, (req, res) => {
+  mongoose.connect("mongodb://localhost:27017").then(() => {
+      var newCourse = new courses(req.body);
+      newCourse.save().then(() => {
+          res.redirect("/admin/dashboard");
+      });
+  });
 });
 
 

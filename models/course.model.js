@@ -1,28 +1,25 @@
-const { default: mongoose } = require("mongoose");
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
-const Schema = mongoose.Schema
-
-
-const courseVideoSchema = new mongoose.Schema({
-    title: { type: 'String' },
-    url: { type: 'String' }
-  });
-
-
-const courseSchema = new Schema({
-    "coursename": { type: 'String' },
-    "coursenickname": { type: 'String' },
-    "coursetrainer": { type: 'String' },
-    "courseduration": { type: 'String'},
-    "courseprice": { type: 'String'},
-    "courseprereq": { type: ['String'] },
-    "coursesamplevideo": { type: 'String'},
-    "coursetype": { type: 'String'},
-    "courselogourl":{type: 'String'},
-    "coursedescription":{type: 'String'},
-    "courseroughtopics": { type: ['String'] },
-    "coursevideos": { type: [courseVideoSchema] }
+const courseVideoSchema = new Schema({
+    title: { type: String, required: true },
+    url: { type: String, required: true }
 });
 
-var Course = mongoose.model('Course', courseSchema);
-module.exports = Course
+const courseSchema = new Schema({
+    coursetopic: { type: String, required: true },
+    coursename: { type: String, required: true },
+    coursetrainer: { type: String, required: true },
+    courseduration: { type: String, required: true },
+    courseprice: { type: Number, required: true },
+    coursetype: { type: String, required: true },
+    courseprereq: { type: [String], required: true },
+    coursesamplevideo: { type: String, required: true },
+    courselogourl: { type: String, required: true },
+    coursedescription: { type: String, required: true },
+    courseroughtopics: { type: [String], required: true },
+    coursevideos: { type: [courseVideoSchema], required: true }
+});
+
+const Course = mongoose.model('Course', courseSchema);
+module.exports = Course;

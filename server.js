@@ -133,18 +133,33 @@ app.post('/login', async (req, res) => {
 
 
 // Admin routes
-app.post('/createcourse', authenticateToken, async (req, res) => {
+app.post('/createcourse', async (req, res) => {
   try {
-      // Assuming the user must be an admin to create a course
+      // Check if the user has an admin role
       if (req.headers.role !== 'admin') {
           return res.status(403).json({ message: 'Access denied. Admins only.' });
       }
 
-      const { coursename, coursenickname, coursetrainer, courseduration, courseprice, courseprereq, coursesamplevideo, coursevideourls, coursetype, courselogourl, coursedescription, courseroughtopics, coursecontenttitle, coursevideos } = req.body;
-
-      const newCourse = new Course({
+      // Extract the required fields from the request body
+      const {
+          coursetopic,
           coursename,
-          coursenickname,
+          coursetrainer,
+          courseduration,
+          courseprice,
+          courseprereq,
+          coursesamplevideo,
+          coursetype,
+          courselogourl,
+          coursedescription,
+          courseroughtopics,
+          coursevideos
+      } = req.body;
+
+      // Create a new course document
+      const newCourse = new Course({
+          coursetopic,          // Included coursetopic
+          coursename,
           coursetrainer,
           courseduration,
           courseprice,
@@ -157,14 +172,23 @@ app.post('/createcourse', authenticateToken, async (req, res) => {
           coursevideos
       });
 
+      // Save the course to the database
       await newCourse.save();
-      console.log('Course created successfully:', newCourse); // Log the created course details
+      
+      // Log the created course details
+      console.log('Course created successfully:', newCourse);
+      
+      // Respond with success message and course data
       res.status(201).json({ message: 'Course created successfully', course: newCourse });
   } catch (err) {
-      console.error("Error creating course:", err); // Log any errors that occur
+      // Log any errors that occur
+      console.error("Error creating course:", err);
+      
+      // Respond with an internal server error status
       res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 
 

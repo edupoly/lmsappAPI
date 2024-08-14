@@ -14,6 +14,8 @@ var Cohort = require("./models/cohort.model");
 
 var app = express();
 app.use(express.static(__dirname + "/public"));
+// Serve static files from the 'public' directory
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -154,15 +156,11 @@ const upload = multer({ storage: storage });
 // Admin route for creating a cohort with file upload
 app.post('/createcohort', upload.single('cohortpic'), async (req, res) => {
   try {
-    // Check if the user has an admin role
     if (req.headers.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied. Admins only.' });
     }
 
-    // Extract the required fields from the request body
-    const { cohortname, cohortid, cohorttags } = req.body;
-
-    // Get the original file name (if a file was uploaded)
+    const { cohortname, cohortid, cohorttags, createdAt } = req.body;
     const cohortpic = req.file ? req.file.originalname : null;
 
     // Create a new cohort document
@@ -170,38 +168,44 @@ app.post('/createcohort', upload.single('cohortpic'), async (req, res) => {
       cohortname,
       cohortid,
       cohorttags,
-      cohortpic // Store only the original file name
+      cohortpic,
+      cohortdate: new Date(createdAt) // Convert string to Date object
     });
 
-    // Save the cohort to the database
     await newCohort.save();
-
-    // Log the created cohort details
     console.log('Cohort created successfully:', newCohort);
-
-    // Respond with success message and cohort data
     res.status(201).json({ message: 'Cohort created successfully', cohort: newCohort });
   } catch (err) {
-    // Log any errors that occur
     console.error("Error creating cohort:", err);
-
-    // Respond with an internal server error status
     res.status(500).json({ message: 'Internal server error' });
   }
 });
 
 
 // Route to get all cohorts
-app.get("/getcohorts", async(req,res)=>{
-   try{
-    const cohorts = await Cohort.find()
-    res.json(cohorts)
-   }
-   catch(err){
-      console.error('Error fetching cohorts', err);
-      res.status(500).json({message: "Internal Server error"})
-   }
-})
+app.get("/getcohorts", async (req, res) => {
+  try {
+    const cohorts = await Cohort.find();
+
+    // Map cohorts to include the full URL for cohortpic
+    const cohortsWithPicUrl = cohorts.map(cohort => {
+      // Generate URL for cohortpic
+      const cohortPicUrl = cohort.cohortpic ?
+        `${req.protocol}://${req.get('host')}/uploads/${cohort.cohortid}/${cohort.cohortpic}` :
+        null;
+
+      return {
+        ...cohort.toObject(),
+        cohortpic: cohortPicUrl
+      };
+    });
+
+    res.json(cohortsWithPicUrl); // Return the updated cohorts
+  } catch (err) {
+    console.error('Error fetching cohorts:', err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
 
 app.listen(9999, () => {

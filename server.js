@@ -185,27 +185,75 @@ app.post('/createcohort', upload.single('cohortpic'), async (req, res) => {
 // Route to get all cohorts
 app.get("/getcohorts", async (req, res) => {
   try {
+    // Fetch cohorts from the database
     const cohorts = await Cohort.find();
 
-    // Map cohorts to include the full URL for cohortpic
-    const cohortsWithPicUrl = cohorts.map(cohort => {
-      // Generate URL for cohortpic
+    // Fetch the count of students enrolled in each cohort
+    const cohortsWithCounts = await Promise.all(cohorts.map(async (cohort) => {
+      const studentCount = await User.countDocuments({ cohorts: cohort.cohortid });
+
+      // Generate the URL for cohortpic
       const cohortPicUrl = cohort.cohortpic ?
         `${req.protocol}://${req.get('host')}/uploads/${cohort.cohortid}/${cohort.cohortpic}` :
         null;
 
       return {
         ...cohort.toObject(),
-        cohortpic: cohortPicUrl
+        cohortpic: cohortPicUrl,
+        studentCount: studentCount // Add the student count
       };
-    });
+    }));
 
-    res.json(cohortsWithPicUrl); // Return the updated cohorts
+    res.json(cohortsWithCounts); // Return cohorts with the student count
   } catch (err) {
     console.error('Error fetching cohorts:', err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
+// getusersofacohort
+app.get("/getusersofacohort", async (req, res) => {
+  const { cohortId } = req.query;
+
+  try {
+    // Assuming your User model has a field like `cohortId` that stores the cohort ID
+    const users = await User.find({ cohorts: cohortId });
+
+    if (users.length > 0) {
+      res.json(users);
+    } else {
+      res.status(404).json({ message: 'No users found for this cohort ID' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// adduserstocohort
+app.post("/adduserstocohort", async (req, res) => {
+
+  const { cohortId, contacts } = req.body;
+
+  if (!cohortId || !Array.isArray(contacts) || contacts.length === 0) {
+    return res.status(400).json({ message: 'Invalid data format' });
+  }
+
+  try {
+    const result = await User.updateMany(
+      { contact: { $in: contacts } }, // Match users by their contact
+      { $addToSet: { cohorts: cohortId } } // Add cohortId to the cohorts array
+    );
+
+    if (result.modifiedCount > 0) {
+      res.json({ message: 'Users successfully added to cohort' });
+    } else {
+      res.status(404).json({ message: 'No users found with the provided contacts' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 
 
 app.listen(9999, () => {

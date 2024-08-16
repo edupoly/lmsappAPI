@@ -254,8 +254,6 @@ app.post("/adduserstocohort", async (req, res) => {
   }
 });
 
-
-
 app.listen(9999, () => {
   console.log('server is running on 9999');
 });
